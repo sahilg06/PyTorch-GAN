@@ -86,13 +86,13 @@ optimizer_D_LR = torch.optim.Adam(D_LR.parameters(), lr=opt.lr, betas=(opt.b1, o
 Tensor = torch.cuda.FloatTensor if cuda else torch.Tensor
 
 dataloader = DataLoader(
-    ImageDataset("raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/../../data/%s" % opt.dataset_name, input_shape),
+    ImageDataset("/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/../../data/%s" % opt.dataset_name, input_shape),
     batch_size=opt.batch_size,
     shuffle=True,
     num_workers=opt.n_cpu,
 )
 val_dataloader = DataLoader(
-    ImageDataset("raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/../../data/%s" % opt.dataset_name, input_shape, mode="val"),
+    ImageDataset("/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/../../data/%s" % opt.dataset_name, input_shape, mode="val"),
     batch_size=8,
     shuffle=True,
     num_workers=1,
@@ -253,7 +253,7 @@ for epoch in range(opt.epoch, opt.n_epochs):
 
     if opt.checkpoint_interval != -1 and epoch % opt.checkpoint_interval == 0:
         # Save model checkpoints
-        torch.save(generator.state_dict(), "raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/saved_models/%s/generator_%d.pth" % (opt.dataset_name, epoch))
-        torch.save(encoder.state_dict(), "raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/saved_models/%s/encoder_%d.pth" % (opt.dataset_name, epoch))
-        torch.save(D_VAE.state_dict(), "raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/saved_models/%s/D_VAE_%d.pth" % (opt.dataset_name, epoch))
-        torch.save(D_LR.state_dict(), "raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/saved_models/%s/D_LR_%d.pth" % (opt.dataset_name, epoch))
+        torch.save(generator.state_dict(), "/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/saved_models/%s/generator_%d.pth" % (opt.dataset_name, epoch))
+        torch.save(encoder.state_dict(), "/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/saved_models/%s/encoder_%d.pth" % (opt.dataset_name, epoch))
+        torch.save(D_VAE.state_dict(), "/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/saved_models/%s/D_VAE_%d.pth" % (opt.dataset_name, epoch))
+        torch.save(D_LR.state_dict(), "/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/saved_models/%s/D_LR_%d.pth" % (opt.dataset_name, epoch))
