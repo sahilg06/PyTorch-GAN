@@ -15,7 +15,7 @@ from torchvision import datasets
 from torch.autograd import Variable
 
 from models import *
-from datasets import *
+#from datasets import *
 
 import torch.nn as nn
 import torch.nn.functional as F
@@ -23,8 +23,8 @@ import torch
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--epoch", type=int, default=0, help="epoch to start training from")
-parser.add_argument("--n_epochs", type=int, default=200, help="number of epochs of training")
-parser.add_argument("--dataset_name", type=str, default="edges2shoes", help="name of the dataset")
+parser.add_argument("--n_epochs", type=int, default=31, help="number of epochs of training")
+parser.add_argument("--dataset_name", type=str, default="CIFAR10", help="name of the dataset")
 parser.add_argument("--batch_size", type=int, default=8, help="size of the batches")
 parser.add_argument("--lr", type=float, default=0.0002, help="adam: learning rate")
 parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
@@ -34,8 +34,8 @@ parser.add_argument("--img_height", type=int, default=128, help="size of image h
 parser.add_argument("--img_width", type=int, default=128, help="size of image width")
 parser.add_argument("--channels", type=int, default=3, help="number of image channels")
 parser.add_argument("--latent_dim", type=int, default=8, help="number of latent codes")
-parser.add_argument("--sample_interval", type=int, default=400, help="interval between saving generator samples")
-parser.add_argument("--checkpoint_interval", type=int, default=-1, help="interval between model checkpoints")
+parser.add_argument("--sample_interval", type=int, default=1600, help="interval between saving generator samples")
+parser.add_argument("--checkpoint_interval", type=int, default=15, help="interval between model checkpoints")
 parser.add_argument("--lambda_pixel", type=float, default=10, help="pixelwise loss weight")
 parser.add_argument("--lambda_latent", type=float, default=0.5, help="latent loss weight")
 parser.add_argument("--lambda_kl", type=float, default=0.01, help="kullback-leibler loss weight")
@@ -85,36 +85,108 @@ optimizer_D_LR = torch.optim.Adam(D_LR.parameters(), lr=opt.lr, betas=(opt.b1, o
 
 Tensor = torch.cuda.FloatTensor if cuda else torch.Tensor
 
-dataloader = DataLoader(
-    ImageDataset("/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/../../data/%s" % opt.dataset_name, input_shape),
-    batch_size=opt.batch_size,
-    shuffle=True,
-    num_workers=opt.n_cpu,
-)
-val_dataloader = DataLoader(
-    ImageDataset("/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/../../data/%s" % opt.dataset_name, input_shape, mode="val"),
-    batch_size=8,
-    shuffle=True,
-    num_workers=1,
-)
+#adding Gaussian NOISE 
+class AddGaussianNoise(object):
+    def __init__(self, mean=0., std=1.):
+        self.std = std
+        self.mean = mean
+        
+    def __call__(self, tensor):
+        return tensor + torch.randn(tensor.size()) * self.std + self.mean
+    
+    def __repr__(self):
+        return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
+
+
+# Dataset
+train_dataset = torchvision.datasets.CIFAR10(root="/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/../../data/%s" % opt.dataset_name, 
+                                           train=True, 
+                                           transform=transforms.Compose([
+                                                    transforms.Resize((128,128), Image.BICUBIC),
+                                                    transforms.ToTensor(),
+                                                    transforms.Normalize([0.5,0.5,0.5], [0.5,0.5,0.5]),
+                                           ]),
+                                           download=True)
+  
+
+
+test_dataset = torchvision.datasets.CIFAR10(root="/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/../../data/%s" % opt.dataset_name, 
+                                            train=False, 
+                                            transform=transforms.Compose([
+                                                      transforms.Resize((128,128), Image.BICUBIC),
+                                                      transforms.ToTensor(),
+                                                      transforms.Normalize([0.5,0.5,0.5], [0.5,0.5,0.5]),
+                                            ]),
+                                            download=True)
+# Data loader
+train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
+                                           batch_size=8,
+                                           num_workers=8,
+                                           shuffle=True)
+
+test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
+                                          batch_size=8,
+                                          num_workers=1,
+                                          shuffle=False)
+
+
+
+#noised-dataset
+train_dataset_noised = torchvision.datasets.CIFAR10(root="/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/../../data/%s" % opt.dataset_name, 
+                                           train=True, 
+                                           transform=transforms.Compose([
+                                                    transforms.Resize((128,128), Image.BICUBIC),
+                                                    transforms.ToTensor(),
+                                                    transforms.Normalize([0.5,0.5,0.5], [0.5,0.5,0.5]),
+                                                    AddGaussianNoise(0.,2.)
+                                           ]),
+                                           download=True)
+  
+
+
+test_dataset_noised = torchvision.datasets.CIFAR10(root="/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/../../data/%s" % opt.dataset_name, 
+                                            train=False, 
+                                            transform=transforms.Compose([
+                                                      transforms.Resize((128,128), Image.BICUBIC),
+                                                      transforms.ToTensor(),
+                                                      transforms.Normalize([0.5,0.5,0.5], [0.5,0.5,0.5]),
+                                                      AddGaussianNoise(0.,2.)
+                                            ]),
+                                            download=True)
+# Noised-Data loader
+train_loader_noised = torch.utils.data.DataLoader(dataset=train_dataset_noised,
+                                           batch_size=8,
+                                           num_workers=8,
+                                           shuffle=True)
+
+test_loader_noised = torch.utils.data.DataLoader(dataset=test_dataset_noised,
+                                          batch_size=8,
+                                          num_workers=1,
+                                          shuffle=False)
+
 
 
 def sample_images(batches_done):
-    """Saves a generated sample from the validation set"""
+
     generator.eval()
-    imgs = next(iter(val_dataloader))
+    img_noised = next(iter(test_loader_noised))
+    img=next(iter(test_loader))
     img_samples = None
-    for img_A, img_B in zip(imgs["A"], imgs["B"]):
+    for i in range(len(img_noised[0])):
+
         # Repeat input image by number of desired columns
-        real_A = img_A.view(1, *img_A.shape).repeat(opt.latent_dim, 1, 1, 1)
+        real_A = img_noised[0][i].view(1, *img_noised[0][i].shape).repeat(latent_dim, 1, 1, 1)
         real_A = Variable(real_A.type(Tensor))
+        
         # Sample latent representations
-        sampled_z = Variable(Tensor(np.random.normal(0, 1, (opt.latent_dim, opt.latent_dim))))
+        sampled_z = Variable(Tensor(np.random.normal(0, 1, (latent_dim, latent_dim))))
+
         # Generate samples
         fake_B = generator(real_A, sampled_z)
-        # Concatenate samples horisontally
+
+        # Concatenate samples horizontally
         fake_B = torch.cat([x for x in fake_B.data.cpu()], -1)
-        img_sample = torch.cat((img_A, fake_B), -1)
+        img_sample = torch.cat((img[0][i], fake_B), -1)
         img_sample = img_sample.view(1, *img_sample.shape)
         # Concatenate with previous samples vertically
         img_samples = img_sample if img_samples is None else torch.cat((img_samples, img_sample), -2)
@@ -138,12 +210,13 @@ valid = 1
 fake = 0
 
 prev_time = time.time()
-for epoch in range(opt.epoch, opt.n_epochs):
-    for i, batch in enumerate(dataloader):
+for epoch in range(epoch, n_epochs):
+    i=0
+    for batch_real, batch_noised in zip(train_loader, train_loader_noised):
 
         # Set model input
-        real_A = Variable(batch["A"].type(Tensor))
-        real_B = Variable(batch["B"].type(Tensor))
+        real_A = Variable(batch_noised[0].type(Tensor))
+        real_B = Variable(batch_real[0].type(Tensor))
 
         # -------------------------------
         #  Train Generator and Encoder
@@ -225,7 +298,7 @@ for epoch in range(opt.epoch, opt.n_epochs):
         # --------------
 
         # Determine approximate time left
-        batches_done = epoch * len(dataloader) + i
+        batches_done = epoch * len(dataloader) + i ; i=i+1
         batches_left = opt.n_epochs * len(dataloader) - batches_done
         time_left = datetime.timedelta(seconds=batches_left * (time.time() - prev_time))
         prev_time = time.time()
