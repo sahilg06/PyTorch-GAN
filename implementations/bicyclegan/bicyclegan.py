@@ -99,7 +99,7 @@ class AddGaussianNoise(object):
 
 
 # Dataset
-train_dataset = torchvision.datasets.CIFAR10(root="/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/../../data/%s" % opt.dataset_name, 
+train_dataset = datasets.CIFAR10(root="/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/../../data/%s" % opt.dataset_name, 
                                            train=True, 
                                            transform=transforms.Compose([
                                                     transforms.Resize((128,128), Image.BICUBIC),
@@ -110,7 +110,7 @@ train_dataset = torchvision.datasets.CIFAR10(root="/raid/sahil_g_ma/PyTorch-GAN/
   
 
 
-test_dataset = torchvision.datasets.CIFAR10(root="/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/../../data/%s" % opt.dataset_name, 
+test_dataset = datasets.CIFAR10(root="/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/../../data/%s" % opt.dataset_name, 
                                             train=False, 
                                             transform=transforms.Compose([
                                                       transforms.Resize((128,128), Image.BICUBIC),
@@ -132,7 +132,7 @@ test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
 
 
 #noised-dataset
-train_dataset_noised = torchvision.datasets.CIFAR10(root="/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/../../data/%s" % opt.dataset_name, 
+train_dataset_noised = datasets.CIFAR10(root="/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/../../data/%s" % opt.dataset_name, 
                                            train=True, 
                                            transform=transforms.Compose([
                                                     transforms.Resize((128,128), Image.BICUBIC),
@@ -144,7 +144,7 @@ train_dataset_noised = torchvision.datasets.CIFAR10(root="/raid/sahil_g_ma/PyTor
   
 
 
-test_dataset_noised = torchvision.datasets.CIFAR10(root="/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/../../data/%s" % opt.dataset_name, 
+test_dataset_noised = datasets.CIFAR10(root="/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/../../data/%s" % opt.dataset_name, 
                                             train=False, 
                                             transform=transforms.Compose([
                                                       transforms.Resize((128,128), Image.BICUBIC),
