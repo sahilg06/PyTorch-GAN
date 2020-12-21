@@ -301,8 +301,8 @@ for epoch in range(opt.epoch,opt.n_epochs):
         # --------------
 
         # Determine approximate time left
-        batches_done = epoch * len(dataloader) + i ; i=i+1
-        batches_left = opt.n_epochs * len(dataloader) - batches_done
+        batches_done = epoch * len(train_loader) + i ; i=i+1
+        batches_left = opt.n_epochs * len(train_loader) - batches_done
         time_left = datetime.timedelta(seconds=batches_left * (time.time() - prev_time))
         prev_time = time.time()
 
@@ -313,7 +313,7 @@ for epoch in range(opt.epoch,opt.n_epochs):
                 epoch,
                 opt.n_epochs,
                 i,
-                len(dataloader),
+                len(train_loader),
                 loss_D_VAE.item(),
                 loss_D_LR.item(),
                 loss_GE.item(),
