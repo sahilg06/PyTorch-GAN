@@ -105,7 +105,7 @@ class AddGaussianNoise(object):
 train_dataset = datasets.CIFAR10(root="/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/../../data/%s" % opt.dataset_name, 
                                            train=True, 
                                            transform=transforms.Compose([
-                                                    transforms.Resize((128,128), Image.BICUBIC),
+                                                    transforms.Resize((opt.img_height,opt.img_width), Image.BICUBIC),
                                                     transforms.ToTensor(),
                                                     transforms.Normalize([0.5,0.5,0.5], [0.5,0.5,0.5]),
                                            ]),
@@ -116,20 +116,20 @@ train_dataset = datasets.CIFAR10(root="/raid/sahil_g_ma/PyTorch-GAN/implementati
 test_dataset = datasets.CIFAR10(root="/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/../../data/%s" % opt.dataset_name, 
                                             train=False, 
                                             transform=transforms.Compose([
-                                                      transforms.Resize((128,128), Image.BICUBIC),
+                                                      transforms.Resize((opt.img_height,opt.img_width), Image.BICUBIC),
                                                       transforms.ToTensor(),
                                                       transforms.Normalize([0.5,0.5,0.5], [0.5,0.5,0.5]),
                                             ]),
                                             download=True)
 # Data loader
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
-                                           batch_size=8,
-                                           num_workers=8,
+                                           batch_size = opt.batch_size,
+                                           num_workers = 8,
                                            shuffle=True)
 
 test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
-                                          batch_size=8,
-                                          num_workers=1,
+                                          batch_size = opt.batch_size,
+                                          num_workers = 1,
                                           shuffle=False)
 
 
@@ -138,7 +138,7 @@ test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
 train_dataset_noised = datasets.CIFAR10(root="/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/../../data/%s" % opt.dataset_name, 
                                            train=True, 
                                            transform=transforms.Compose([
-                                                    transforms.Resize((128,128), Image.BICUBIC),
+                                                    transforms.Resize((opt.img_height,opt.img_width), Image.BICUBIC),
                                                     transforms.ToTensor(),
                                                     transforms.Normalize([0.5,0.5,0.5], [0.5,0.5,0.5]),
                                                     AddGaussianNoise(0.,2.)
@@ -150,7 +150,7 @@ train_dataset_noised = datasets.CIFAR10(root="/raid/sahil_g_ma/PyTorch-GAN/imple
 test_dataset_noised = datasets.CIFAR10(root="/raid/sahil_g_ma/PyTorch-GAN/implementations/bicyclegan/../../data/%s" % opt.dataset_name, 
                                             train=False, 
                                             transform=transforms.Compose([
-                                                      transforms.Resize((128,128), Image.BICUBIC),
+                                                      transforms.Resize((opt.img_height,opt.img_width), Image.BICUBIC),
                                                       transforms.ToTensor(),
                                                       transforms.Normalize([0.5,0.5,0.5], [0.5,0.5,0.5]),
                                                       AddGaussianNoise(0.,2.)
@@ -158,13 +158,13 @@ test_dataset_noised = datasets.CIFAR10(root="/raid/sahil_g_ma/PyTorch-GAN/implem
                                             download=True)
 # Noised-Data loader
 train_loader_noised = torch.utils.data.DataLoader(dataset=train_dataset_noised,
-                                           batch_size=8,
-                                           num_workers=8,
+                                           batch_size = opt.batch_size,
+                                           num_workers = 8,
                                            shuffle=True)
 
 test_loader_noised = torch.utils.data.DataLoader(dataset=test_dataset_noised,
-                                          batch_size=8,
-                                          num_workers=1,
+                                          batch_size = opt.batch_size,
+                                          num_workers = 1,
                                           shuffle=False)
 
 
@@ -178,11 +178,11 @@ def sample_images(batches_done):
     for i in range(len(img_noised[0])):
 
         # Repeat input image by number of desired columns
-        real_A = img_noised[0][i].view(1, *img_noised[0][i].shape).repeat(latent_dim, 1, 1, 1)
+        real_A = img_noised[0][i].view(1, *img_noised[0][i].shape).repeat(opt.latent_dim, 1, 1, 1)
         real_A = Variable(real_A.type(Tensor))
         
         # Sample latent representations
-        sampled_z = Variable(Tensor(np.random.normal(0, 1, (latent_dim, latent_dim))))
+        sampled_z = Variable(Tensor(np.random.normal(0, 1, (opt.latent_dim,opt.latent_dim))))
 
         # Generate samples
         fake_B = generator(real_A, sampled_z)
@@ -213,7 +213,7 @@ valid = 1
 fake = 0
 
 prev_time = time.time()
-for epoch in range(epoch, n_epochs):
+for epoch in range(opt.epoch,opt.n_epochs):
     i=0
     for batch_real, batch_noised in zip(train_loader, train_loader_noised):
 
